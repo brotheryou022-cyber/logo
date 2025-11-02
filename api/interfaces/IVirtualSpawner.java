@@ -1,95 +1,78 @@
-package me.aquatic.confirmsell;
+package net.codava.virtualspawner.api.interfaces;
 
-import net.codava.virtualspawner.api.event.PreSpawnerSellEvent;
-import net.codava.virtualspawner.api.event.SpawnerMenuOpenEvent;
-import net.codava.virtualspawner.api.interfaces.IVirtualSpawner;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import java.util.Collection;
+import java.util.UUID;
+import net.codava.virtualspawner.config.SpawnerConfigData;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+public interface IVirtualSpawner {
+   UUID getUuid();
 
-public class ConfirmSellPlugin extends JavaPlugin implements Listener {
+   boolean isCorrupted();
 
-    private final Map<Player, IVirtualSpawner> pendingSell = new HashMap<>();
+   long getContentAmount();
 
-    @Override
-    public void onEnable() {
-        getServer().getPluginManager().registerEvents(this, this);
-    }
+   SpawnerConfigData getSpawnerConfigData();
 
-    @EventHandler
-    public void onPreSell(PreSpawnerSellEvent event) {
-        Player player = event.getPlayer();
-        event.setCancelled(true); // Cancel original sell
-        pendingSell.put(player, event.getVirtualSpawner());
-        openConfirmMenu(player);
-    }
+   void remove();
 
-    private void openConfirmMenu(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, "ᴄᴏɴꜰɪʀᴍ ѕᴇʟʟ");
+   void remove(boolean var1);
 
-        // Cancel button
-        ItemStack cancel = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta cancelMeta = cancel.getItemMeta();
-        cancelMeta.setDisplayName(ChatColor.RED + "ᴄᴀɴᴄᴇʟ");
-        cancelMeta.setLore(Collections.singletonList(ChatColor.WHITE + "Click to cancel"));
-        cancel.setItemMeta(cancelMeta);
-        inv.setItem(11, cancel);
+   Collection<IStorage> getContent();
 
-        // Confirm button
-        ItemStack confirm = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-        ItemMeta confirmMeta = confirm.getItemMeta();
-        confirmMeta.setDisplayName(ChatColor.GREEN + "ᴄᴏɴꜰɪʀᴍ");
-        confirmMeta.setLore(Collections.singletonList(ChatColor.WHITE + "Click to confirm"));
-        confirm.setItemMeta(confirmMeta);
-        inv.setItem(15, confirm);
+   IStorage getContent(Material var1);
 
-        player.openInventory(inv);
-    }
+   Location getLocation();
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (!event.getView().getTitle().equals("ᴄᴏɴꜰɪʀᴍ ѕᴇʟʟ")) return;
+   void addStack();
 
-        event.setCancelled(true);
+   void addStack(int var1);
 
-        IVirtualSpawner spawner = pendingSell.get(player);
-        if (spawner == null) {
-            player.closeInventory();
-            return;
-        }
+   void setStack(int var1);
 
-        int slot = event.getSlot();
+   void removeStack();
 
-        if (slot == 11) { // Cancel
-            player.closeInventory();
-            pendingSell.remove(player);
-            Bukkit.getPluginManager().callEvent(new SpawnerMenuOpenEvent(player, spawner));
-            return;
-        }
+   void removeStack(int var1);
 
-        if (slot == 15) { // Confirm
-            player.closeInventory();
-            pendingSell.remove(player);
+   long getStack();
 
-            // Take all stock from spawner and sell
-            spawner.takeAll(player);
-            spawner.sellStock(player, 1, 1.0, true);
+   EntityType getEntityType();
 
-            player.sendMessage(ChatColor.GREEN + "Spawner stock sold successfully!");
-        }
-    }
+   void clearStock();
+
+   int getXp();
+
+   void setXp(int var1);
+
+   void takeOne(Player var1, Material var2);
+
+   int takeStack(Player var1, Material var2);
+
+   void takeAll(Player var1);
+
+   ItemStack getItemFromStock(Material var1, int var2);
+
+   void sellStock(Player var1, int var2, double var3, boolean var5);
+
+   void sellXP(Player var1, int var2, boolean var3);
+
+   default void sellStock(Player player, int delay, double multiplier) {
+      this.sellStock(player, delay, multiplier, true);
+   }
+
+   default void sellStock(Player player, int delay, boolean showNotification) {
+      this.sellStock(player, delay, 1.0D, showNotification);
+   }
+
+   default void sellStock(Player player, int delay) {
+      this.sellStock(player, delay, 1.0D, true);
+   }
+
+   default void sellXP(Player player, int delay) {
+      this.sellXP(player, delay, true);
+   }
 }
